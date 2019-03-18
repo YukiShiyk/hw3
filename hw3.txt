@@ -1,0 +1,166 @@
+1、画直方图
+close all;
+clear
+clc;
+[img,map]= imread('citywall2.bmp'); 
+map(end:255,:)=0;
+%matlab自带函数
+subplot(2,2,1);  
+imshow(img,map); title('citywall2原图');  
+subplot(2,2,3);  
+imhist(img,map); title('原图直方图(imhist函数)');  
+[m,n]=size(img);
+p=zeros(1,256);
+img=ind2gray(img,map);
+for i=0:255
+    p(i+1)=length(find(img==i))/(m*n);
+end
+subplot(2,2,4);
+bar(0:255,p,'b'); 
+axis([0 256 0 0.05]);
+title('原图直方图（自己编写）');  
+
+2、直方图均衡化
+
+close all;
+clear
+clc;
+[img,map]= imread('woman2.bmp'); 
+map(end:255,:)=0;
+%matlab自带函数
+subplot(2,2,1);  
+imshow(img,map); title('woman2原图');  
+subplot(2,2,2);  
+imhist(img,map); title('原图直方图(imhist函数)');  
+
+[m,n]=size(img);
+p=zeros(1,256);
+for i=0:255
+    p(i+1)=length(find(img==i))/(m*n);
+end
+s=zeros(1,256); 
+for i=1:256  
+     for j=1:i  
+         s(i)=p(j)+s(i);                  
+     end  
+end    
+a=round(s*255);  
+b=img;  
+for i=0:255  
+     b(find(img==i))=a(i+1);                
+end  
+subplot(2,2,3);  
+imshow(b)                            
+title('均衡化后图像');  
+for i=0:255  
+    GPeq(i+1)=sum(p(find(a==i)));            
+end  
+subplot(2,2,4);  
+bar(0:255,GPeq,'b'); title('均衡化后的直方图');  
+
+3、直方图匹配
+close all;
+clear
+clc;
+[img,map]=imread('woman2.bmp');
+map(end:255,:)=0;
+img=ind2gray(img,map);
+[img2,map2]=imread('woman.bmp');
+img2=ind2gray(img,map);
+hsp=imhist(img,256);
+g=histeq(img,hsp);
+figure;
+subplot(3,2,1);
+imshow(img,map);
+imwrite(img,map,'原图.bmp');
+title('原图.bmp');
+subplot(3,2,2);
+imshow(g,map2);
+imwrite(g,map2,'原图.bmp');
+title('直方图匹配增强后的图像');
+subplot(3,2,3);
+imhist(img,map);
+title('原图的直方图');
+subplot(3,2,4);
+imhist(img2,map2);
+title('匹配图的直方图');
+subplot(3,2,5);
+imhist(g,map);
+title('增强后图像的直方图');
+
+4、局部增强
+clear all
+clc
+% Igray:灰度图像
+% k0,k1：可调参数
+% Ibw：提取得到数字区域
+Igray=imread('elain.bmp');
+%=rgb2gray(a);
+k0=0.2;
+k1=0.01;
+E=3;
+masksize = 7; % 邻域范围，奇数
+exsize = floor(masksize/2); % 原图片需要填充的区域
+Iex = padarray(Igray, [exsize exsize], 'replicate', 'both'); % 图片填充
+Is = zeros(size(Igray)); % 局部标准差
+for i = 1:size(Igray, 1)
+for j = 1:size(Igray, 2)
+subdomain = Iex(i:i+2*exsize, j:j+2*exsize);
+localmean = sum(subdomain(:))/masksize^2;
+Is(i, j) = sqrt(sum((subdomain(:)-localmean).^2))/masksize;
+end
+end
+% 确定不同区域的放大系数
+meanIm = mean(Igray(:));
+minIm = min(Igray(:));
+meanIs = mean(Is(:));
+maxIs = max(Is(:));
+Im1 = Igray<(minIm+k0*(meanIm-minIm)); % 均值阈值提取
+Is1 = Is>(meanIs + k1*(maxIs-meanIs)); % 标准差阈值提取
+s = strel('disk',8); % 8需要根据实际图片大小来调
+Is1 = imclose(Is1, s); % 标准差阈值提取闭运算
+Ibw = Im1 & Is1; % 局部增强
+%subplot(224)
+%imshow(Ibw);title('增强图像的放大图像');
+Ibw2=Ibw.*(E-1)+1;
+for i = 1:size(Igray, 1)
+for j = 1:size(Igray, 2)
+P(i,j)=Ibw2(i,j).*Igray(i,j);
+end
+end
+subplot(223)
+imshow(P);title('局部增强后的图像');
+subplot(224)
+imhist(P);title('局部增强后的直方图')
+subplot(221)
+imshow(Igray);title('局部增强原始图像');
+subplot(222)
+imhist(Igray);title('原始图像直方图')
+
+5、图像分割
+
+close all;
+clear
+clc;
+img=imread('elain.bmp');
+subplot(121)
+imshow(img);title('原始图像');
+t1=80;
+[m,n]=size(img);
+i1=zeros(m,n);
+for i=1:m
+    for j=1:n
+        if img(i,j)>t1
+            i1(i,j)=1;
+        else
+            i1(i,j)=0;
+        end
+    end
+end
+subplot(122);
+imshow(i1);title('分割后的图像');
+
+
+
+
+
